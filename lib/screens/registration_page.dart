@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:to_do_app/utils/config.dart';
+import 'package:to_do_app/core/func/custom_border_style.dart';
+import 'package:to_do_app/core/func/orange_page_gradient.dart';
+import 'package:to_do_app/core/utils/config.dart';
+import 'package:to_do_app/screens/widgets/custom_text_field.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'applogo.dart';
 import 'package:http/http.dart' as http;
@@ -60,13 +63,8 @@ class RegistrationState extends State<Registration> {
         body: Container(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                colors: [Color(0XFFF95A3B), Color(0XFFF96713)],
-                begin: FractionalOffset.topLeft,
-                end: FractionalOffset.bottomCenter,
-                stops: [0.0, 0.8],
-                tileMode: TileMode.mirror),
+          decoration: BoxDecoration(
+            gradient: myPageGradient(),
           ),
           child: Center(
             child: SingleChildScrollView(
@@ -76,19 +74,12 @@ class RegistrationState extends State<Registration> {
                   const CommonLogo(),
                   const HeightBox(10),
                   "CREATE YOUR ACCOUNT".text.size(22).yellow100.make(),
-                  TextField(
-                    controller: emailController,
-                    keyboardType: TextInputType.text,
-                    decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        errorStyle: const TextStyle(color: Colors.white),
-                        errorText: _isNotValidate ? "Enter Proper Info" : null,
-                        hintText: "Email",
-                        border: const OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)))),
-                  ).p4().px24(),
+                  CustomTextField(
+                          controller: emailController,
+                          isNotValidate: _isNotValidate,
+                          myhintText: "Email")
+                      .p4()
+                      .px24(),
                   TextField(
                     controller: passwordController,
                     keyboardType: TextInputType.text,
@@ -114,9 +105,7 @@ class RegistrationState extends State<Registration> {
                         errorStyle: const TextStyle(color: Colors.white),
                         errorText: _isNotValidate ? "Enter Proper Info" : null,
                         hintText: "Password",
-                        border: const OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)))),
+                        border: customBorderStyle()),
                   ).p4().px24(),
                   HStack([
                     GestureDetector(

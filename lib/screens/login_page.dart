@@ -1,13 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:to_do_app/core/func/custom_border_style.dart';
+import 'package:to_do_app/core/services/login_service.dart';
 import 'package:to_do_app/screens/registration_page.dart';
+import 'package:to_do_app/screens/widgets/custom_text_field.dart';
 import 'package:velocity_x/velocity_x.dart';
+import '../core/func/orange_page_gradient.dart';
 import 'applogo.dart';
-import 'package:http/http.dart' as http;
-import 'package:to_do_app/utils/config.dart';
+import 'package:to_do_app/core/utils/config.dart';
 // import 'package:flutter_todo_app/dashboard.dart';
-// import 'package:to_do_app/screens/registration_page_page.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -17,42 +17,12 @@ class SignInPage extends StatefulWidget {
 }
 
 class SignInPageState extends State<SignInPage> {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
   final bool _isNotValidate = false;
-  late SharedPreferences prefs;
 
   @override
   void initState() {
     super.initState();
     initSharedPref();
-  }
-
-  void initSharedPref() async {
-    prefs = await SharedPreferences.getInstance();
-  }
-
-  void loginUser() async {
-    if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
-      var reqBody = {
-        "email": emailController.text,
-        "password": passwordController.text
-      };
-
-      var response = await http.post(Uri.parse(login),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(reqBody));
-
-      var jsonResponse = jsonDecode(response.body);
-      if (jsonResponse['status']) {
-        var myToken = jsonResponse['token'];
-        prefs.setString('token', myToken);
-        // Navigator.push(context,
-        //     MaterialPageRoute(builder: (context) => Dashboard(token: myToken)));
-      } else {
-        printHere('Something went wrong');
-      }
-    }
   }
 
   @override
@@ -62,13 +32,8 @@ class SignInPageState extends State<SignInPage> {
         body: Container(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                colors: [Color(0XFFF95A3B), Color(0XFFF96713)],
-                begin: FractionalOffset.topLeft,
-                end: FractionalOffset.bottomCenter,
-                stops: [0.0, 0.8],
-                tileMode: TileMode.mirror),
+          decoration: BoxDecoration(
+            gradient: myPageGradient(),
           ),
           child: Center(
             child: SingleChildScrollView(
@@ -78,18 +43,12 @@ class SignInPageState extends State<SignInPage> {
                   const CommonLogo(),
                   const HeightBox(10),
                   "Email Sign-In".text.size(22).yellow100.make(),
-                  TextField(
-                    controller: emailController,
-                    keyboardType: TextInputType.text,
-                    decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        hintText: "Email",
-                        errorText: _isNotValidate ? "Enter Proper Info" : null,
-                        border: const OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)))),
-                  ).p4().px24(),
+                  CustomTextField(
+                          controller: emailController,
+                          isNotValidate: _isNotValidate,
+                          myhintText: "Email")
+                      .p4()
+                      .px24(),
                   TextField(
                     controller: passwordController,
                     keyboardType: TextInputType.text,
@@ -98,13 +57,11 @@ class SignInPageState extends State<SignInPage> {
                         fillColor: Colors.white,
                         hintText: "Password",
                         errorText: _isNotValidate ? "Enter Proper Info" : null,
-                        border: const OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)))),
+                        border: customBorderStyle()),
                   ).p4().px24(),
                   GestureDetector(
                     onTap: () {
-                      loginUser();
+                      LoginService().loginUser();
                     },
                     child: HStack([
                       VxBox(child: "LogIn".text.white.makeCentered().p16())
