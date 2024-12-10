@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:to_do_app/core/func/custom_border_style.dart';
 import 'package:to_do_app/core/services/login_service.dart';
+import 'package:to_do_app/screens/home_page.dart';
 import 'package:to_do_app/screens/registration_page.dart';
 import 'package:to_do_app/screens/widgets/custom_text_field.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../core/func/orange_page_gradient.dart';
-import 'applogo.dart';
+import 'widgets/applogo.dart';
 import 'package:to_do_app/core/utils/config.dart';
-// import 'package:flutter_todo_app/dashboard.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -61,7 +61,14 @@ class SignInPageState extends State<SignInPage> {
                   ).p4().px24(),
                   GestureDetector(
                     onTap: () {
-                      LoginService().loginUser();
+                      const LoginService().loginUser((token) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Dashboard(token: token),
+                          ),
+                        );
+                      });
                     },
                     child: HStack([
                       VxBox(child: "LogIn".text.white.makeCentered().p16())

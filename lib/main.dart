@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:to_do_app/screens/home_page.dart';
 import 'package:to_do_app/screens/login_page.dart';
-// import 'package:flutter_todo_app/dashboard.dart';
-// import 'package:jwt_decoder/jwt_decoder.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,10 +28,8 @@ class MyApp extends StatelessWidget {
           primaryColor: Colors.black,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        home: const SignInPage());
-
-    //  (token != null && JwtDecoder.isExpired(token) == false)
-    //     ? Dashboard(token: token)
-    //     : SignInPage());
+        home: (token != null && JwtDecoder.isExpired(token!) == false)
+            ? Dashboard(token: token!)
+            : const SignInPage());
   }
 }

@@ -8,7 +8,8 @@ TextEditingController emailController = TextEditingController();
 TextEditingController passwordController = TextEditingController();
 
 class LoginService {
-  void loginUser() async {
+  const LoginService();
+  void loginUser(Function(String) navPage) async {
     if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
       var reqBody = {
         "email": emailController.text,
@@ -20,11 +21,11 @@ class LoginService {
           body: jsonEncode(reqBody));
 
       var jsonResponse = jsonDecode(response.body);
+
       if (jsonResponse['status']) {
         var myToken = jsonResponse['token'];
         prefs.setString('token', myToken);
-        // Navigator.push(context,
-        //     MaterialPageRoute(builder: (context) => Dashboard(token: myToken)));
+        navPage(myToken);
       } else {
         printHere('Something went wrong');
       }

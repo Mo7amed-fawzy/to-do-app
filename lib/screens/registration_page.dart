@@ -1,16 +1,15 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:to_do_app/core/func/create_random_passowrd.dart';
 import 'package:to_do_app/core/func/custom_border_style.dart';
 import 'package:to_do_app/core/func/orange_page_gradient.dart';
 import 'package:to_do_app/core/utils/config.dart';
 import 'package:to_do_app/screens/widgets/custom_text_field.dart';
 import 'package:velocity_x/velocity_x.dart';
-import 'applogo.dart';
+import 'widgets/applogo.dart';
 import 'package:http/http.dart' as http;
 import 'login_page.dart';
-// import 'package:to_do_app/utils/config.dart';
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -140,27 +139,4 @@ class RegistrationState extends State<Registration> {
       ),
     );
   }
-}
-
-String generatePassword() {
-  String upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  String lower = 'abcdefghijklmnopqrstuvwxyz';
-  String numbers = '1234567890';
-  String symbols = '!@#\$%^&*()<>,./';
-
-  String password = '';
-
-  int passLength = 20;
-
-  String seed = upper + lower + numbers + symbols;
-
-  List<String> list = seed.split('').toList();
-
-  Random rand = Random();
-
-  for (int i = 0; i < passLength; i++) {
-    int index = rand.nextInt(list.length);
-    password += list[index];
-  }
-  return password;
 }
