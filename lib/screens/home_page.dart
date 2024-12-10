@@ -1,5 +1,5 @@
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -22,6 +22,7 @@ class _DashboardState extends State<Dashboard> {
   final TextEditingController _todoTitle = TextEditingController();
   final TextEditingController _todoDesc = TextEditingController();
   List? items;
+
   @override
   void initState() {
     super.initState();
@@ -32,59 +33,39 @@ class _DashboardState extends State<Dashboard> {
     // getTodoList(userId);
   }
 
-  // void addTodo() async {
-  //   if (_todoTitle.text.isNotEmpty && _todoDesc.text.isNotEmpty) {
-  //     var regBody = {
-  //       "userId": userId,
-  //       "title": _todoTitle.text,
-  //       "desc": _todoDesc.text
-  //     };
+  void addTodo() async {
+    if (_todoTitle.text.isNotEmpty && _todoDesc.text.isNotEmpty) {
+      var regBody = {
+        "userId": userId,
+        "title": _todoTitle.text,
+        "desc": _todoDesc.text
+      };
 
-  //     var response = await http.post(Uri.parse(addtodo),
-  //         headers: {"Content-Type": "application/json"},
-  //         body: jsonEncode(regBody));
+      var response = await http.post(
+        Uri.parse(addtodo),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(regBody),
+      );
+      var jsonResponse = jsonDecode(response.body);
 
-  //     var jsonResponse = jsonDecode(response.body);
-
-  //     printHere(jsonResponse['status']);
-  //     if (mounted) {
-  //       if (jsonResponse['status']) {
-  //         _todoDesc.clear();
-  //         _todoTitle.clear();
-  //         Navigator.pop(context);
-  //         getTodoList(userId);
-  //       } else {
-  //         printHere("SomeThing Went Wrong");
-  //       }
-  //     }
-  //   }
-  // }
-
-  // void getTodoList(userId) async {
-  //   var regBody = {"userId": userId};
-
-  //   var response = await http.post(Uri.parse(getToDoList),
-  //       headers: {"Content-Type": "application/json"},
-  //       body: jsonEncode(regBody));
-
-  //   var jsonResponse = jsonDecode(response.body);
-  //   items = jsonResponse['success'];
-
-  //   setState(() {});
-  // }
-
-  // void deleteItem(id) async {
-  //   var regBody = {"id": id};
-
-  //   var response = await http.post(Uri.parse(deleteTodo),
-  //       headers: {"Content-Type": "application/json"},
-  //       body: jsonEncode(regBody));
-
-  //   var jsonResponse = jsonDecode(response.body);
-  //   if (jsonResponse['status']) {
-  //     getTodoList(userId);
-  //   }
-  // }
+      if (response.statusCode == 200) {
+        if (mounted) {
+          if (jsonResponse['status']) {
+            setState(() {
+              // items!.add(jsonResponse['data']);
+            });
+            _todoDesc.clear();
+            _todoTitle.clear();
+            Navigator.pop(context);
+          }
+        } else {
+          printHere("SomeThing Went Wrong");
+        }
+      } else {
+        printHere("Failed to add Todo");
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +176,7 @@ class _DashboardState extends State<Dashboard> {
                       .px8(),
                   ElevatedButton(
                       onPressed: () {
-                        // addTodo();
+                        addTodo();
                       },
                       child: const Text("Add"))
                 ],
