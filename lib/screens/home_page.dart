@@ -67,6 +67,32 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
+  // getTodoList(userId);
+
+  // void getTodoList(userId) async {
+  //   var regBody = {"userId": userId};
+
+  //   var response = await http.post(Uri.parse(getToDoList),
+  //       headers: {"Content-Type": "application/json"},
+  //       body: jsonEncode(regBody));
+
+  //   var jsonResponse = jsonDecode(response.body);
+  //   items = jsonResponse['success'];
+
+  //   setState(() {});
+  // }
+
+  // void deleteItem(id) async {
+  //   var regBody = {"id": id};
+
+  //   var response = await http.post(Uri.parse(deleteTodo),
+  //       headers: {"Content-Type": "application/json"},
+  //       body: jsonEncode(regBody));
+
+  //   var jsonResponse = jsonDecode(response.body);
+  //   if (jsonResponse['status']) {
+  //     getTodoList(userId);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
