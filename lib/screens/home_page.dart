@@ -22,6 +22,7 @@ class _DashboardState extends State<Dashboard> {
   final TextEditingController _todoDesc = TextEditingController();
   List? items;
   bool isLoading = false;
+  List<Map<String, dynamic>> deletedItems = [];
 
   @override
   void initState() {
@@ -84,30 +85,101 @@ class _DashboardState extends State<Dashboard> {
     setState(() {});
   }
 
-  Future<void> deleteItem(String itemId) async {
-    try {
-      var regBody = {"itemId": itemId};
+  void restoreDeletedItem() {
+    if (deletedItems.isNotEmpty) {
+      // استرجاع العنصر المحذوف
+      var item = deletedItems.removeAt(0);
 
-      var response = await http.post(
-        Uri.parse(deleteTodo),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(regBody),
+      setState(() {
+        // إضافة العنصر مرة أخرى إلى القائمة
+        items!.insert(item['index'], item);
+      });
+
+      // إظهار رسالة استرجاع العنصر
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Item restored")),
+      );
+    }
+  }
+
+  Future<void> deleteItem(
+      String itemId, String title, String desc, int index) async {
+    try {
+      // تخزين العنصر المحذوف مؤقتًا
+      deletedItems.add(
+          {'itemId': itemId, 'title': title, 'desc': desc, 'index': index});
+
+      // إخفاء العنصر من الواجهة
+      setState(() {
+        items!.removeAt(index);
+      });
+
+      // عرض SnackBar مع خيار Undo
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Item deleted"),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () {
+              restoreDeletedItem();
+            },
+          ),
+          duration: const Duration(seconds: 5),
+        ),
       );
 
-      if (response.statusCode == 200) {
-        var jsonResponse = jsonDecode(response.body);
+      // الانتظار 5 ثوانٍ ثم حذف العنصر من قاعدة البيانات
+      await Future.delayed(const Duration(seconds: 5));
 
-        if (jsonResponse['status']) {
-          getTodoList(userId);
+      // إذا لم يتم استرجاع العنصر في الـ 5 ثوانٍ، نقوم بحذفه فعليًا
+      if (deletedItems.isNotEmpty && deletedItems[0]['itemId'] == itemId) {
+        var regBody = {"itemId": itemId};
+
+        var response = await http.post(
+          Uri.parse(deleteTodo),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(regBody),
+        );
+
+        if (response.statusCode == 200) {
+          var jsonResponse = jsonDecode(response.body);
+          if (jsonResponse['status']) {
+            printHere("Item deleted permanently");
+          } else {
+            printHere("API returned false status: $jsonResponse");
+          }
         } else {
-          printHere("API returned false status: $jsonResponse");
+          printHere("Server error: ${response.statusCode}");
         }
-      } else {
-        printHere("Server error: ${response.statusCode}");
-        printHere("Response body: ${response.body}");
       }
     } catch (e) {
       printHere("Exception occurred: $e");
+    }
+  }
+
+  Future<void> updateTodo(String itemId, String title, String desc) async {
+    var regBody = {
+      "itemId": itemId,
+      "title": title,
+      "desc": desc,
+    };
+
+    toggleLoading(true);
+    var response = await http.post(
+      Uri.parse(updateTodos),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(regBody),
+    );
+    toggleLoading(false);
+
+    var jsonResponse = jsonDecode(response.body);
+    if (jsonResponse['status']) {
+      printHere("Update Successful: ${jsonResponse['success']}");
+      getTodoList(userId);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Update Failed")),
+      );
     }
   }
 
@@ -139,6 +211,41 @@ class _DashboardState extends State<Dashboard> {
         });
   }
 
+  Future<void> _showEditDialog(BuildContext context, String itemId,
+      String currentTitle, String currentDesc) async {
+    _todoTitle.text = currentTitle;
+    _todoDesc.text = currentDesc;
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit To-Do'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CustomTextDialogField(
+                textController: _todoTitle,
+                customHint: "Title",
+              ).p4().px8(),
+              CustomTextDialogField(
+                textController: _todoDesc,
+                customHint: "Description",
+              ).p4().px8(),
+              ElevatedButton(
+                onPressed: () {
+                  updateTodo(itemId, _todoTitle.text, _todoDesc.text);
+                  Navigator.pop(context);
+                },
+                child: const Text("Update"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,25 +258,48 @@ class _DashboardState extends State<Dashboard> {
                 Container(
                   padding: const EdgeInsets.only(
                       top: 60.0, left: 30.0, right: 30.0, bottom: 30.0),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.white,
-                        radius: 30.0,
-                        child: Icon(
-                          Icons.list,
-                          size: 30.0,
-                        ),
+                      Row(
+                        children: [
+                          const CircleAvatar(
+                            backgroundColor: Colors.white,
+                            radius: 30.0,
+                            child: Icon(
+                              Icons.list,
+                              size: 30.0,
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          Column(
+                            children: [
+                              Text(
+                                email,
+                                style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                              Text(
+                                userId,
+                                style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 10.0),
-                      Text(
+                      const SizedBox(height: 10.0),
+                      const Text(
                         'ToDo with NodeJS + Mongodb',
                         style: TextStyle(
-                            fontSize: 30.0, fontWeight: FontWeight.w700),
+                            fontSize: 30, fontWeight: FontWeight.w700),
                       ),
-                      SizedBox(height: 8.0),
-                      Text(
+                      const SizedBox(height: 8.0),
+                      const Text(
                         'Tasks',
                         style: TextStyle(fontSize: 20),
                       ),
@@ -196,13 +326,30 @@ class _DashboardState extends State<Dashboard> {
                                       DismissiblePane(onDismissed: () {}),
                                   children: [
                                     SlidableAction(
+                                      backgroundColor: Colors.blue,
+                                      foregroundColor: Colors.white,
+                                      icon: Icons.edit,
+                                      label: 'Edit',
+                                      onPressed: (BuildContext context) {
+                                        // استدعاء نافذة التعديل
+                                        _showEditDialog(
+                                          context,
+                                          items![index]['_id'],
+                                          items![index]['title'],
+                                          items![index]['desc'],
+                                        );
+                                      },
+                                    ),
+                                    SlidableAction(
                                       backgroundColor: const Color(0xFFFE4A49),
                                       foregroundColor: Colors.white,
                                       icon: Icons.delete,
                                       label: 'Delete',
                                       onPressed: (BuildContext context) {
-                                        printHere('${items![index]['_id']}');
-                                        deleteItem('${items![index]['_id']}');
+                                        String title = items![index]['title'];
+                                        String desc = items![index]['desc'];
+                                        String itemId = items![index]['_id'];
+                                        deleteItem(itemId, title, desc, index);
                                       },
                                     ),
                                   ],
