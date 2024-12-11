@@ -22,6 +22,7 @@ class _DashboardState extends State<Dashboard> {
   final TextEditingController _todoTitle = TextEditingController();
   final TextEditingController _todoDesc = TextEditingController();
   List? items;
+  final List<String> itemss = List<String>.generate(10, (i) => "item ${i + 1}");
 
   @override
   void initState() {
@@ -67,32 +68,6 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  // getTodoList(userId);
-
-  // void getTodoList(userId) async {
-  //   var regBody = {"userId": userId};
-
-  //   var response = await http.post(Uri.parse(getToDoList),
-  //       headers: {"Content-Type": "application/json"},
-  //       body: jsonEncode(regBody));
-
-  //   var jsonResponse = jsonDecode(response.body);
-  //   items = jsonResponse['success'];
-
-  //   setState(() {});
-  // }
-
-  // void deleteItem(id) async {
-  //   var regBody = {"id": id};
-
-  //   var response = await http.post(Uri.parse(deleteTodo),
-  //       headers: {"Content-Type": "application/json"},
-  //       body: jsonEncode(regBody));
-
-  //   var jsonResponse = jsonDecode(response.body);
-  //   if (jsonResponse['status']) {
-  //     getTodoList(userId);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,10 +111,10 @@ class _DashboardState extends State<Dashboard> {
                       topRight: Radius.circular(20))),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: items == null
+                child: itemss == null
                     ? null
                     : ListView.builder(
-                        itemCount: items!.length,
+                        itemCount: itemss!.length,
                         itemBuilder: (context, int index) {
                           return Slidable(
                             key: const ValueKey(0),
@@ -153,7 +128,7 @@ class _DashboardState extends State<Dashboard> {
                                   icon: Icons.delete,
                                   label: 'Delete',
                                   onPressed: (BuildContext context) {
-                                    printHere('${items![index]['_id']}');
+                                    // printHere('${items![index]['_id']}');
                                     // deleteItem('${items![index]['_id']}');
                                   },
                                 ),
@@ -163,8 +138,9 @@ class _DashboardState extends State<Dashboard> {
                               borderOnForeground: false,
                               child: ListTile(
                                 leading: const Icon(Icons.task),
-                                title: Text('${items![index]['title']}'),
-                                subtitle: Text('${items![index]['desc']}'),
+                                // title: Text('${items![index]['title']}'),
+                                // subtitle: Text('${items![index]['desc']}'),
+                                subtitle: Text(itemss[index]),
                                 trailing: const Icon(Icons.arrow_back),
                               ),
                             ),
