@@ -7,6 +7,7 @@ class CustomTextDialogField extends StatelessWidget {
     required this.customHint,
     required this.textController,
   });
+
   final String customHint;
   final TextEditingController textController;
 
@@ -16,10 +17,11 @@ class CustomTextDialogField extends StatelessWidget {
       controller: textController,
       keyboardType: TextInputType.text,
       decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          hintText: customHint,
-          border: customBorderStyle()),
+        filled: true,
+        fillColor: Colors.white,
+        hintText: customHint,
+        border: customBorderStyle(),
+      ),
     );
   }
 }

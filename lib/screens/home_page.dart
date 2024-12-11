@@ -22,7 +22,7 @@ class _DashboardState extends State<Dashboard> {
   final TextEditingController _todoDesc = TextEditingController();
   List? items;
   bool isLoading = false;
-  List<Map<String, dynamic>> deletedItems = [];
+  List<Map<String, dynamic>> tempDeletedItems = [];
 
   @override
   void initState() {
@@ -43,11 +43,16 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Future<void> addTodo() async {
-    if (_todoTitle.text.isNotEmpty && _todoDesc.text.isNotEmpty) {
+    // إذا كانت الحقول غير فارغة
+    if (_todoTitle.text.isNotEmpty || _todoDesc.text.isNotEmpty) {
       var regBody = {
         "userId": userId,
-        "title": _todoTitle.text,
-        "desc": _todoDesc.text
+        "title": _todoTitle.text.isNotEmpty
+            ? _todoTitle.text
+            : "No Title", // قيمة بديلة
+        "desc": _todoDesc.text.isNotEmpty
+            ? _todoDesc.text
+            : "No Description" // قيمة بديلة
       };
 
       toggleLoading(true);
@@ -85,36 +90,18 @@ class _DashboardState extends State<Dashboard> {
     setState(() {});
   }
 
-  void restoreDeletedItem() {
-    if (deletedItems.isNotEmpty) {
-      // استرجاع العنصر المحذوف
-      var item = deletedItems.removeAt(0);
-
-      setState(() {
-        // إضافة العنصر مرة أخرى إلى القائمة
-        items!.insert(item['index'], item);
-      });
-
-      // إظهار رسالة استرجاع العنصر
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Item restored")),
-      );
-    }
-  }
-
   Future<void> deleteItem(
       String itemId, String title, String desc, int index) async {
     try {
-      // تخزين العنصر المحذوف مؤقتًا
-      deletedItems.add(
-          {'itemId': itemId, 'title': title, 'desc': desc, 'index': index});
+      tempDeletedItems.add({
+        'item': items![index],
+        'index': index,
+      });
 
-      // إخفاء العنصر من الواجهة
       setState(() {
         items!.removeAt(index);
       });
 
-      // عرض SnackBar مع خيار Undo
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text("Item deleted"),
@@ -128,11 +115,10 @@ class _DashboardState extends State<Dashboard> {
         ),
       );
 
-      // الانتظار 5 ثوانٍ ثم حذف العنصر من قاعدة البيانات
       await Future.delayed(const Duration(seconds: 5));
 
-      // إذا لم يتم استرجاع العنصر في الـ 5 ثوانٍ، نقوم بحذفه فعليًا
-      if (deletedItems.isNotEmpty && deletedItems[0]['itemId'] == itemId) {
+      if (tempDeletedItems.isNotEmpty &&
+          tempDeletedItems.last['item']['_id'] == itemId) {
         var regBody = {"itemId": itemId};
 
         var response = await http.post(
@@ -146,7 +132,7 @@ class _DashboardState extends State<Dashboard> {
           if (jsonResponse['status']) {
             printHere("Item deleted permanently");
           } else {
-            printHere("API returned false status: $jsonResponse");
+            printHere("Failed to delete item from server: $jsonResponse");
           }
         } else {
           printHere("Server error: ${response.statusCode}");
@@ -154,6 +140,20 @@ class _DashboardState extends State<Dashboard> {
       }
     } catch (e) {
       printHere("Exception occurred: $e");
+    }
+  }
+
+  void restoreDeletedItem() {
+    if (tempDeletedItems.isNotEmpty) {
+      var deletedItem = tempDeletedItems.removeLast();
+
+      setState(() {
+        items!.insert(deletedItem['index'], deletedItem['item']);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Item restored")),
+      );
     }
   }
 
@@ -183,36 +183,10 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  Future<void> _displayTextInputDialog(BuildContext context) async {
-    return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Add To-Do'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CustomTextDialogField(
-                        textController: _todoTitle, customHint: "Title")
-                    .p4()
-                    .px8(),
-                CustomTextDialogField(
-                        textController: _todoDesc, customHint: "Description")
-                    .p4()
-                    .px8(),
-                ElevatedButton(
-                    onPressed: () {
-                      addTodo();
-                    },
-                    child: const Text("Add"))
-              ],
-            ),
-          );
-        });
-  }
-
+  // عند فتح نافذة التعديل
   Future<void> _showEditDialog(BuildContext context, String itemId,
       String currentTitle, String currentDesc) async {
+    // إعادة تعيين القيم القديمة عند التعديل
     _todoTitle.text = currentTitle;
     _todoDesc.text = currentDesc;
 
@@ -244,6 +218,46 @@ class _DashboardState extends State<Dashboard> {
         );
       },
     );
+  }
+
+// عند إضافة مهمة جديدة
+  Future<void> _displayTextInputDialog(BuildContext context) async {
+    // مسح القيم عند إضافة مهمة جديدة
+    _todoTitle.clear();
+    _todoDesc.clear();
+
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Add To-Do'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomTextDialogField(
+                        textController: _todoTitle, customHint: "Title")
+                    .p4()
+                    .px8(),
+                CustomTextDialogField(
+                        textController: _todoDesc, customHint: "Description")
+                    .p4()
+                    .px8(),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_todoTitle.text.isEmpty && _todoDesc.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("يعم متستهبلش اكتب حاجة")),
+                      );
+                    } else {
+                      addTodo();
+                    }
+                  },
+                  child: const Text("Add"),
+                )
+              ],
+            ),
+          );
+        });
   }
 
   @override
@@ -299,9 +313,23 @@ class _DashboardState extends State<Dashboard> {
                             fontSize: 30, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8.0),
-                      const Text(
-                        'Tasks',
-                        style: TextStyle(fontSize: 20),
+                      Row(
+                        children: [
+                          const Text(
+                            'Tasks',
+                            style: TextStyle(fontSize: 20),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            isLoading
+                                ? 'Loading...'
+                                : items != null
+                                    ? items!.length.toString()
+                                    : '0',
+                            style: const TextStyle(
+                                fontSize: 19, fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -313,7 +341,7 @@ class _DashboardState extends State<Dashboard> {
                         borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20))),
-                    child: items == null
+                    child: items == null || items!.isEmpty
                         ? const Center(child: Text("No tasks available"))
                         : ListView.builder(
                             itemCount: items!.length,
@@ -329,6 +357,7 @@ class _DashboardState extends State<Dashboard> {
                                       backgroundColor: Colors.blue,
                                       foregroundColor: Colors.white,
                                       icon: Icons.edit,
+                                      borderRadius: BorderRadius.circular(10),
                                       label: 'Edit',
                                       onPressed: (BuildContext context) {
                                         // استدعاء نافذة التعديل
@@ -344,6 +373,7 @@ class _DashboardState extends State<Dashboard> {
                                       backgroundColor: const Color(0xFFFE4A49),
                                       foregroundColor: Colors.white,
                                       icon: Icons.delete,
+                                      borderRadius: BorderRadius.circular(10),
                                       label: 'Delete',
                                       onPressed: (BuildContext context) {
                                         String title = items![index]['title'];
