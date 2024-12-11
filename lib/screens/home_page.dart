@@ -74,12 +74,41 @@ class _DashboardState extends State<Dashboard> {
 
   void getTodoList(userId) async {
     var regBody = {"userId": userId};
+
     var response = await http.post(Uri.parse(getToDoList),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(regBody));
+
     var jsonResponse = jsonDecode(response.body);
     items = jsonResponse['success'];
     setState(() {});
+  }
+
+  Future<void> deleteItem(String itemId) async {
+    try {
+      var regBody = {"itemId": itemId};
+
+      var response = await http.post(
+        Uri.parse(deleteTodo),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(regBody),
+      );
+
+      if (response.statusCode == 200) {
+        var jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse['status']) {
+          getTodoList(userId);
+        } else {
+          printHere("API returned false status: $jsonResponse");
+        }
+      } else {
+        printHere("Server error: ${response.statusCode}");
+        printHere("Response body: ${response.body}");
+      }
+    } catch (e) {
+      printHere("Exception occurred: $e");
+    }
   }
 
   Future<void> _displayTextInputDialog(BuildContext context) async {
@@ -172,7 +201,8 @@ class _DashboardState extends State<Dashboard> {
                                       icon: Icons.delete,
                                       label: 'Delete',
                                       onPressed: (BuildContext context) {
-                                        // Handle delete action here
+                                        printHere('${items![index]['_id']}');
+                                        deleteItem('${items![index]['_id']}');
                                       },
                                     ),
                                   ],
